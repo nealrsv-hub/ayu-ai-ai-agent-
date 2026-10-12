@@ -1,0 +1,19 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ayu-ai"
+version = "0.1.0"
+description = "A small text assistant with optional speech and a future sensor boundary"
+requires-python = ">=3.11"
+dependencies = []
+
+[project.optional-dependencies]
+voice = ["pyttsx3>=2.98,<3"]
+
+[project.scripts]
+ayu-ai = "ayu_ai.__main__:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]

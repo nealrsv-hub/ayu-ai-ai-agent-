@@ -1,0 +1,4 @@
+# Copy to config.toml; load explicitly with --config config.toml.
+# Install the voice extra before enabling this.
+[voice]
+enabled = false
