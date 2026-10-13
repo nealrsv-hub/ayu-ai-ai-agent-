@@ -1,0 +1,6 @@
+{
+  "name": "Demo Grandparent",
+  "preferred_language": "English",
+  "interests": ["gardening", "walking"],
+  "is_synthetic": true
+}
