@@ -1,0 +1,46 @@
+# Secrets / local environment
+.env
+.env.*
+!.env.example
+secrets/
+credentials/
+credentials.json
+service-account.json
+*.pem
+*.key
+*.p12
+*.pfx
+secrets.h
+**/secrets.h
+
+# Python
+.venv/
+venv/
+env/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+
+# Runtime state / private data
+greeting_state.json
+backend/data/greeting_state.json
+backend/data/event_history.json
+backend/data/demo_greeting_state.json
+*.db
+*.sqlite
+*.sqlite3
+*.log
+logs/
+
+# Frontend / Node
+node_modules/
+dist/
+build/
+
+# IDE / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+Desktop.ini

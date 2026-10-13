@@ -1,0 +1,26 @@
+[
+  {
+    "id": "WHO_ACTIVITY",
+    "title": "Physical activity for adults and older adults",
+    "keywords": ["activity", "walking", "exercise", "physical", "movement"],
+    "text": "Regular physical activity supports health and functional ability. The exact amount and type should be adapted to the person's abilities and circumstances.",
+    "source_url": "https://www.who.int/news-room/fact-sheets/detail/physical-activity",
+    "checked_on": "2026-10-09"
+  },
+  {
+    "id": "PUBLIC_HYDRATION",
+    "title": "General hydration education",
+    "keywords": ["water", "hydration", "fluids", "drink"],
+    "text": "Fluid needs vary by person and situation. General hydration information is educational and is not a substitute for individual medical advice.",
+    "source_url": "https://www.nhs.uk/live-well/eat-well/food-guidelines-and-food-labels/water-drinks-nutrition/",
+    "checked_on": "2026-10-09"
+  },
+  {
+    "id": "WHO_FALLS",
+    "title": "Falls prevention overview",
+    "keywords": ["falls", "fall", "prevention", "balance", "older"],
+    "text": "Falls are an important public-health issue. Prevention can involve attention to environmental hazards, physical function, and other risk factors.",
+    "source_url": "https://www.who.int/news-room/fact-sheets/detail/falls",
+    "checked_on": "2026-10-09"
+  }
+]
