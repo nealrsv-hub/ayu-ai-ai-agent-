@@ -1,5 +1,5 @@
 // Add this helper to your EXISTING working ESP32-S3 sketch.
-// This is not standalone firmware. It assigns no GPIO pins and controls no motor.
+// Requires the surrounding sketch to configure GPIO and read the sensors.
 // In setup(): Serial.begin(115200);
 // Call with your measured values, roughly twice per second.
 // Pass NAN on a failed reading. Keep the DHT11 read interval >= 2 seconds.
@@ -30,3 +30,4 @@ inline void sendTelemetry(float distanceCm, float temperatureC, float humidityPc
   Serial.print(ledOn ? "true" : "false");
   Serial.println("}");
 }
+

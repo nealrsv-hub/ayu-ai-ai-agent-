@@ -1,8 +1,4 @@
-"""Persistent event history store for AYUSARTHI.
-
-Stores events in event_history.json with a rolling retention limit of 100 events,
-matching event_plan.txt rules.
-"""
+"""Keep the latest 100 events in a local JSON file."""
 
 import json
 import logging
@@ -99,3 +95,4 @@ class EventStore:
         """Clear all stored events."""
         with self.lock:
             self._write_file([])
+

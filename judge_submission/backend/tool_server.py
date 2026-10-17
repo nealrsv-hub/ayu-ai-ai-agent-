@@ -1,7 +1,7 @@
 """Local Python tools for an n8n agent. Bind to loopback; use fictional demo data.
 
-Run: python tool_server.py --demo
-Real serial: python tool_server.py --serial COM5
+Run from the repository root: python -m backend.tool_server --demo
+Real serial: python -m backend.tool_server --serial COM5
 No cloud model API is called by this process.
 """
 import argparse
@@ -182,7 +182,7 @@ def handler_for(state):
                     self.reply(409, {"error": "set-light is available only with --demo"})
                     return
                 light = body.get("light", "bright")
-                if light not in {"dark", "bright"}:
+                if not isinstance(light, str) or light not in {"dark", "bright"}:
                     self.reply(400, {"error": "light must be 'dark' or 'bright'"})
                     return
                 with state.demo_lock:
@@ -274,3 +274,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+

@@ -1,10 +1,8 @@
-# Demo data
+# Demo fixtures
 
-This directory contains only non-secret prototype configuration and fictional/demo information.
+- `profile_demo.json` is a synthetic profile.
+- `health_notes.json` contains three educational summaries with source URLs, searched by English keywords.
+- `calibration.json` contains no real posture bands. Measure the installation before adding ranges.
+- Event-history and greeting-state files are created at runtime and ignored by Git.
 
-- `profile_demo.json` is explicitly synthetic.
-- `health_notes.json` is a small reviewed-source demonstration dataset used by the keyword retrieval tool.
-- `calibration.json` intentionally has empty real posture bands until the physical sensor installation is measured.
-- Runtime files such as `event_history.json` and greeting-state files are generated locally and ignored by Git.
-
-The exact original `health_notes.json` and `profile_demo.json` files were not among the files uploaded for this GitHub cleanup, so these safe versions were reconstructed from the documented prototype contract and tests. They contain no real patient record or API credential.
+The profile and note fixtures were reconstructed from the documented prototype contract and tests because the original files were not supplied. They are not patient records. The retained source-check dates are fixture metadata; they do not establish an independent clinical review or current medical validation.

@@ -1,24 +1,4 @@
-"""Comprehensive test suite for AYUSARTHI LED Automation and Event System.
-
-Covers:
-1. dark + standing -> LED ON
-2. dark + sitting -> LED OFF
-3. bright + standing -> LED OFF
-4. bright + sitting -> LED OFF
-5. OFF -> ON logs LIGHT_TRIGGERED once
-6. staying ON does not duplicate event
-7. ON -> OFF logs RECOVERY once
-8. stale sensor -> LED turns OFF / does not turn ON (fail-safe)
-9. unknown posture -> LED OFF
-10. invalid / None light state handled safely
-11. noisy threshold hysteresis simulation
-12. demo mode produces is_simulated = True event
-13. live mode produces is_simulated = False event
-14. LED state survives multiple evaluation cycles
-15. rolling event retention capped at 100
-16. tool_server /tools/sensor-status and /tools/event-history contracts
-17. tool_server control set-light and reset-demo actions
-"""
+"""Check LED decision transitions, event retention, and local HTTP controls."""
 
 import json
 import tempfile
@@ -26,6 +6,7 @@ import threading
 import unittest
 from http.server import ThreadingHTTPServer
 from pathlib import Path
+from urllib.error import HTTPError
 from urllib.request import Request, urlopen
 
 from backend.event_detector import LedAutomation
@@ -223,6 +204,13 @@ class ToolServerLedIntegrationTests(unittest.TestCase):
         self.assertFalse(data["led_on"])
         self.assertEqual(data["led_state"], "off")
 
+    def test_set_light_rejects_invalid_json_values(self):
+        for value in ([], {}, None, True, 42, "dim"):
+            with self.subTest(value=value):
+                with self.assertRaises(HTTPError) as error:
+                    self.post_json("/control", {"action": "set-light", "light": value})
+                self.assertEqual(error.exception.code, 400)
+
     def test_set_light_and_wakeup_triggers_led_automation(self):
         self.post_json("/control", {"action": "reset-demo"})
         status = self.get_json("/tools/sensor-status")
@@ -249,3 +237,4 @@ class ToolServerLedIntegrationTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
