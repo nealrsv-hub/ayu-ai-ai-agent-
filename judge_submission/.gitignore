@@ -1,0 +1,7 @@
+.venv/
+__pycache__/
+*.py[cod]
+.env
+backend/data/event_history.json
+backend/data/demo_greeting_state.json
+backend/data/greeting_state.json
