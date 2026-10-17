@@ -11,7 +11,7 @@ Open a terminal in this folder, create an environment, and install dependencies:
 ```bat
 py -m venv .venv
 .venv\Scripts\activate.bat
-python -m pip install -r requirements.txt
+python -m pip install -r requirements.txt -c constraints-demo.txt
 python -m backend.tool_server --demo
 ```
 
@@ -44,10 +44,10 @@ The frontend reads `N8N_CHAT_URL` and `SENSOR_URL` from the process environment.
 | `backend/data/` | Synthetic profile, source-linked note fixtures, and empty calibration |
 | `prompts/`, `docs/` | Agent instructions and architecture notes |
 
-The parent repository is the development source and contains tests, hardware notes, and auxiliary tools. This copy is retained for review; shared files must stay in sync.
+The parent repository is the development source and contains tests, hardware notes, and auxiliary tools. This copy is generated from the parent repository with `python -m scripts.build_judge_bundle --sync`; CI checks for drift. The archive includes a SHA256 manifest.
 
 ## Voice, privacy, and limitations
 
-Whisper input needs an FFmpeg executable on `PATH` and an initial model download. Review the transcript before sending. Backend speech uses `--speak`; the frontend has a separate **Spoken replies** toggle.
+Voice packages are optional: install them with `python -m pip install -r requirements-voice.txt`. They are not covered by the text/sensor demo constraints or CI. Whisper input needs an FFmpeg executable on `PATH` and an initial model download. Review the transcript before sending. Backend speech uses `--speak`; the frontend has a separate **Spoken replies** toggle.
 
 The backend has no authentication and must stay on loopback. Use synthetic data and keep credentials in n8n. Real posture needs installation-specific calibration. Full firmware, a workflow export, and measured end-to-end results are not included.

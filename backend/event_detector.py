@@ -1,25 +1,12 @@
-"""Deterministic LED automation and event detection for AYUSARTHI.
+"""Calculate software LED state and record transitions.
 
-Rules:
-- LED ON condition:
-    light_state == "dark"
-    AND posture_estimate == "standing"
-    AND sensor data is fresh/valid
-- LED OFF condition:
-    light_state != "dark"
-    OR posture_estimate != "standing"
-    OR sensor data is stale/invalid
-
-Transitions:
-- OFF -> ON: logs LIGHT_TRIGGERED once.
-- ON -> OFF: logs RECOVERY once ("Automatic light condition cleared").
-- Stable states (ON -> ON or OFF -> OFF) do not duplicate events.
-- Fails safe to OFF on stale or invalid data.
+The ON condition requires dark, standing, and fresh input. Other inputs clear
+it to OFF. Storage failures are reported separately and cannot block OFF.
 """
 
 import logging
 import threading
-from backend.event_store import EventStore
+from backend.event_store import EventStore, EventStoreError
 
 LOGGER = logging.getLogger(__name__)
 
@@ -40,6 +27,13 @@ class LedAutomation:
         with self.lock:
             return "on" if self._led_on else "off"
 
+    def _record_event(self, **event):
+        try:
+            self.event_store.add_event(**event)
+        except EventStoreError:
+            # Storage failure must not prevent a stale-input transition to OFF.
+            LOGGER.error("LED decision updated, but its event could not be saved")
+
     def evaluate(self, light_state: str, posture_estimate: str,
                  is_fresh: bool, is_simulated: bool = True,
                  timestamp: str = None) -> bool:
@@ -53,7 +47,7 @@ class LedAutomation:
             previous_state = self._led_on
             if should_turn_on and not previous_state:
                 self._led_on = True
-                self.event_store.add_event(
+                self._record_event(
                     event_type="LIGHT_TRIGGERED",
                     title="Automatic light turned on",
                     description="Darkness detected while standing posture was present.",
@@ -62,10 +56,10 @@ class LedAutomation:
                     is_simulated=is_simulated,
                     timestamp=timestamp,
                 )
-                LOGGER.info("LED turned ON (LIGHT_TRIGGERED logged)")
+                LOGGER.info("Software LED decision changed to ON")
             elif not should_turn_on and previous_state:
                 self._led_on = False
-                self.event_store.add_event(
+                self._record_event(
                     event_type="RECOVERY",
                     title="Automatic light turned off",
                     description="Automatic light condition cleared",
@@ -74,7 +68,7 @@ class LedAutomation:
                     is_simulated=is_simulated,
                     timestamp=timestamp,
                 )
-                LOGGER.info("LED turned OFF (RECOVERY logged)")
+                LOGGER.info("Software LED decision changed to OFF")
             return self._led_on
 
     def fail_safe(self, is_simulated: bool = True, timestamp: str = None) -> bool:
@@ -82,7 +76,7 @@ class LedAutomation:
         with self.lock:
             if self._led_on:
                 self._led_on = False
-                self.event_store.add_event(
+                self._record_event(
                     event_type="RECOVERY",
                     title="Automatic light turned off",
                     description="Automatic light condition cleared",
@@ -91,7 +85,7 @@ class LedAutomation:
                     is_simulated=is_simulated,
                     timestamp=timestamp,
                 )
-                LOGGER.info("LED failed safe to OFF (RECOVERY logged)")
+                LOGGER.info("Software LED decision changed to OFF after stale input")
             return self._led_on
 
     def reset(self):

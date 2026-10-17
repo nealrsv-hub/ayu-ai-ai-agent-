@@ -10,4 +10,4 @@ Do not commit API keys, tokens, passwords, Wi-Fi credentials, private records, c
 
 If a credential is committed, revoke or rotate it at the provider. Removing it from the latest file does not remove it from Git history.
 
-No dependency lock or automated vulnerability scan is configured. Backend tests do not establish deployment security or clinical safety.
+The text/sensor demo uses tested dependency constraints. CI audits the resolved packages and publishes the report with each run. This checks known package advisories, not every possible vulnerability. Optional voice packages and an external n8n instance need separate review. Tests do not establish deployment security or clinical safety.

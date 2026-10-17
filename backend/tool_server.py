@@ -15,7 +15,7 @@ from pathlib import Path
 from urllib.parse import parse_qs, urlsplit
 
 from backend.event_detector import LedAutomation
-from backend.event_store import EventStore
+from backend.event_store import EventStore, EventStoreError
 from backend.monitor import Monitor
 from backend.voice import Speaker
 
@@ -36,7 +36,7 @@ class ToolState:
         self.notes = json.loads((DATA_DIR / "health_notes.json").read_text(encoding="utf-8"))
         self.profile = json.loads((DATA_DIR / "profile_demo.json").read_text(encoding="utf-8"))
         if self.profile.get("is_synthetic") is not True:
-            raise ValueError("This free-API demonstration requires a fictional profile.")
+            raise ValueError("This prototype requires a synthetic demo profile.")
         bands = json.loads((DATA_DIR / "calibration.json").read_text(encoding="utf-8"))["bands_cm"]
         if state_path is None:
             state_path = DATA_DIR / ("demo_greeting_state.json" if demo else "greeting_state.json")
@@ -69,6 +69,7 @@ class ToolState:
             "demo_greeting_clock": "07:00 local time, simulated" if self.demo else None,
             "led_on": led_on,
             "led_state": "on" if led_on else "off",
+            "event_history": self.event_store.status(),
         })
         return snapshot
 
@@ -141,11 +142,20 @@ def handler_for(state):
         def do_GET(self):
             url = urlsplit(self.path)
             if url.path == "/health":
-                self.reply(200, {"ok": True, "is_simulated": state.demo})
+                history = state.event_store.status()
+                self.reply(200 if history["available"] else 503, {
+                    "ok": history["available"], "is_simulated": state.demo,
+                    "event_history": history,
+                })
             elif url.path == "/tools/sensor-status":
                 self.reply(200, state.status())
             elif url.path == "/tools/event-history":
-                self.reply(200, {"events": state.event_store.get_events()})
+                try:
+                    events = state.event_store.get_events()
+                except EventStoreError:
+                    self.reply(503, {"error": "Event history is unavailable; inspect local storage."})
+                else:
+                    self.reply(200, {"events": events})
             elif url.path == "/tools/profile":
                 self.reply(200, state.profile)
             elif url.path == "/tools/health-notes":

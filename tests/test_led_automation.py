@@ -182,6 +182,7 @@ class ToolServerLedIntegrationTests(unittest.TestCase):
         cls.server.shutdown()
         cls.server.server_close()
         cls.server_thread.join(timeout=2)
+        cls.demo_thread.join(timeout=2)
         cls.temp.cleanup()
 
     def get_json(self, path):

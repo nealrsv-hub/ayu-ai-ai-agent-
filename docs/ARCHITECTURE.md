@@ -33,7 +33,7 @@ Monitoring refreshes when Streamlit reruns, including manual refresh and page na
 
 ## State and security
 
-Event history and greeting state are local JSON files ignored by Git. Writes replace a temporary file, but storage failures are logged rather than reported to API callers. The store uses an in-process lock and is not designed for multiple backend processes.
+Event history and greeting state are local JSON files ignored by Git. Writes flush a temporary file and replace the previous file only after serialization succeeds. Unreadable history is preserved and blocks new appends. `/health` reports HTTP 503 when storage is degraded, and sensor status exposes a separate `event_history` status. The sensor path and software LED OFF decision remain available when storage fails. Failed transitions are not silently replayed or claimed as saved. The store uses an in-process lock and is not designed for multiple backend processes.
 
 The backend binds to `127.0.0.1`. It has no application authentication. Keep `/control` out of model tools and do not expose this service to an untrusted network.
 

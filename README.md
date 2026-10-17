@@ -37,7 +37,7 @@ Use Python 3.12 for the configuration checked by the repository tests. From the 
 ```bat
 py -m venv .venv
 .venv\Scripts\activate.bat
-python -m pip install -r requirements.txt
+python -m pip install -r requirements.txt -c constraints-demo.txt
 python -m backend.tool_server --demo
 ```
 
@@ -64,6 +64,8 @@ Keep these services local. See [security boundaries](SECURITY.md).
 
 ### Optional voice and hardware
 
+The default install supports typed chat and sensor monitoring. Install optional audio dependencies separately with `python -m pip install -r requirements-voice.txt`. Optional voice dependencies are not covered by the demo constraints or CI.
+
 The frontend uses local Whisper transcription after its first model download. It requires an FFmpeg executable on `PATH`; confirm the transcript before sending it to chat. Typed chat does not require FFmpeg.
 
 Backend speech is enabled with `--speak`. The frontend has its own **Spoken replies** toggle. Both depend on the computer's audio setup.
@@ -82,7 +84,7 @@ For actual serial telemetry, replace `--demo` with `--serial COM5` using the cor
 | `tests/` | Local backend, frontend-contract, and repository checks |
 | `judge_submission/` | Standalone review copy of the application |
 
-The root application is the development source. The judge copy is kept for review and must be updated when shared code changes.
+The root application is the development source. The judge copy is generated from an explicit file list and checked by CI. See [development and demo checks](docs/DEVELOPMENT.md).
 
 ## Checks and limitations
 
@@ -90,8 +92,10 @@ The root application is the development source. The judge copy is kept for revie
 python -m unittest discover -s tests -v
 ```
 
+CI checks Python 3.12 on Linux and Windows, builds the judge archive, runs a simulated backend check, and audits the tested dependencies. Download the archive and check results from the workflow run artifacts.
+
 The tests use temporary files, local HTTP servers, and mocked frontend requests. They do not establish hardware accuracy, model-answer quality, audible speech, or end-to-end n8n behavior.
 
 There is no workflow export, complete firmware, measured accuracy report, or recorded end-to-end demo in this repository. The educational notes are source-linked fixtures, not a clinical knowledge base. No license has been selected.
 
-The next useful milestone is a repeatable end-to-end demo with a sanitized n8n workflow export, followed by measured hardware calibration.
+The next useful milestone is a repeatable end-to-end demo with a sanitized n8n workflow export, followed by measured hardware calibration. The included backend check does not verify those missing integrations.

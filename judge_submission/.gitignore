@@ -5,6 +5,7 @@
 secrets/
 credentials/
 credentials.json
+.streamlit/secrets.toml
 service-account.json
 *.pem
 *.key
@@ -27,6 +28,9 @@ greeting_state.json
 backend/data/greeting_state.json
 backend/data/event_history.json
 backend/data/demo_greeting_state.json
+backend/data/.*.tmp
+backend/data/greeting_state.tmp
+backend/data/demo_greeting_state.tmp
 *.db
 *.sqlite
 *.sqlite3
@@ -44,4 +48,3 @@ build/
 .DS_Store
 Thumbs.db
 Desktop.ini
-

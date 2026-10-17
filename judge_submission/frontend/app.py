@@ -653,6 +653,9 @@ def render_monitoring_page(sensor):
     elif data.get("is_simulated") is not False:
         st.warning("Data source mode is unknown; these readings are not confirmed as hardware data.")
     fresh = data.get("fresh") is True
+    history = data.get("event_history")
+    if isinstance(history, dict) and history.get("available") is False:
+        st.warning("Event history is unavailable. Sensor readings remain separate from saved history.")
     if not fresh:
         st.warning("Sensor data is stale or freshness is unknown. Readings may not reflect the current room.")
     values = data["values"]
