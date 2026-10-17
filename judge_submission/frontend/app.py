@@ -10,6 +10,7 @@ import inspect
 import json
 import logging
 import math
+import os
 import shutil
 import tempfile
 import threading
@@ -27,8 +28,8 @@ from backend.voice import Speaker
 
 
 BASE_DIR = Path(__file__).resolve().parent
-SENSOR_URL = "http://127.0.0.1:8000/tools/sensor-status"
-CHAT_URL = "http://localhost:5678/webhook/ayusarthi-chat"
+SENSOR_URL = os.environ.get("SENSOR_URL", "").strip() or "http://127.0.0.1:8000/tools/sensor-status"
+CHAT_URL = os.environ.get("N8N_CHAT_URL", "").strip() or "http://localhost:5678/webhook/ayusarthi-chat"
 CHAT_READ_TIMEOUT_SECONDS = 360
 LOGGER = logging.getLogger(__name__)
 WHISPER_MODEL = "base"
@@ -151,7 +152,7 @@ CSS = """
 
 
 def get_logo_path():
-    """Prefer the requested name; support the existing double-extension asset."""
+    """Accept the standard logo filename and older asset names."""
     for name in ("ayusarthi_logo.jpeg", "ayusarthi_logo.jpeg.jpeg",
                  "ayusarthi_logo.jpg", "ayusarthi_logo.png"):
         candidate = BASE_DIR / name
@@ -354,11 +355,11 @@ def get_sensor_status():
     try:
         response = requests.get(SENSOR_URL, timeout=(2, 3))
         response.raise_for_status()
-        result["connected"] = True
         data = response.json()
         if not isinstance(data, dict) or not isinstance(data.get("values"), dict):
             raise ValueError("Expected a sensor object containing a values object.")
         result["data"] = data
+        result["connected"] = True
     except requests.RequestException:
         result["error"] = "The sensor endpoint could not be reached or returned an error."
     except ValueError:
@@ -402,10 +403,9 @@ def ask_ayusarthi(prompt):
         "chatInput": prompt, "sessionId": st.session_state.session_id,
     }, timeout=(3, CHAT_READ_TIMEOUT_SECONDS))
     LOGGER.info(
-        "n8n webhook response status=%s content_type=%s body=%r",
+        "n8n webhook response status=%s content_type=%s",
         response.status_code,
         response.headers.get("content-type"),
-        response.text,
     )
     response.raise_for_status()
     return extract_ayusarthi_answer(response.json())
@@ -507,7 +507,7 @@ def render_home(logo):
         suggestions = (
             ("Check room status", ":material/home:", "What do the current room sensor readings show? State whether they are simulated and fresh."),
             ("Check activity status", ":material/directions_walk:", "What posture does the monitoring system currently estimate? Explain its limitations and whether the data is simulated."),
-            ("Health guidance", ":material/spa:", "Share a short general health education tip from the reviewed health notes, with its source."),
+            ("Health education", ":material/spa:", "Share a short general health education tip from the supplied health notes, with its source."),
         )
         for column, (label, icon, prompt) in zip(st.columns(3), suggestions):
             with column:
@@ -653,6 +653,9 @@ def render_monitoring_page(sensor):
     elif data.get("is_simulated") is not False:
         st.warning("Data source mode is unknown; these readings are not confirmed as hardware data.")
     fresh = data.get("fresh") is True
+    history = data.get("event_history")
+    if isinstance(history, dict) and history.get("available") is False:
+        st.warning("Event history is unavailable. Sensor readings remain separate from saved history.")
     if not fresh:
         st.warning("Sensor data is stale or freshness is unknown. Readings may not reflect the current room.")
     values = data["values"]
@@ -703,15 +706,16 @@ def render_alerts_page():
 
 def render_about_page():
     page_intro("Thoughtfully built for everyday support", "AYUSARTHI AI · Hackathon prototype")
-    st.markdown("AYUSARTHI brings together sensor status, a fictional demo profile, reviewed health-note retrieval, and conversation memory through n8n.")
+    st.markdown("AYUSARTHI combines room sensor status, a fictional demo profile, source-linked educational notes, and chat through a separately configured n8n workflow.")
     st.markdown("General health education is available through chat. Posture is an estimate; the system does not provide medical diagnoses or measure body temperature, heart rate, or blood pressure.")
     st.caption("Microphone input uses local Whisper base transcription. Review and confirm the text before it enters chat. Laptop speech output is a separate system.")
     st.caption("System online describes the sensor tool server. The AI connection is checked when you send a message. Chat requests go through your existing n8n workflow.")
     st.caption("Powered by Neel · CODEX 404")
 
 
-def main():
-    st.set_page_config(page_title="AYUSARTHI AI", page_icon="🌿", layout="wide", initial_sidebar_state="expanded")
+def main(configure_page=True):
+    if configure_page:
+        st.set_page_config(page_title="AYUSARTHI AI", page_icon="🌿", layout="wide", initial_sidebar_state="expanded")
     st.markdown(CSS, unsafe_allow_html=True)
     initialize_session()
     logo, logo_warning = prepare_logo()
@@ -734,3 +738,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+

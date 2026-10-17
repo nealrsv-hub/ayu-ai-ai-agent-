@@ -1,106 +1,53 @@
-# AYU AI — Judge Submission
+# AYUSARTHI judge package
 
-This folder is the focused, self-contained frontend and backend package for the AYU AI / AYUSARTHI hackathon prototype.
+This folder is a review copy of the AYU AI hackathon prototype: a Streamlit frontend, local Python sensor API, synthetic fixtures, and an n8n agent prompt.
 
-AYU AI demonstrates:
+**Scope:** room/environment measurements and distance estimates. This is not a medical device. Caregiver accounts and alert delivery are placeholder pages.
 
-- a Streamlit caregiver-oriented interface;
-- a local Python API for sensor status, demo profile, reviewed health notes, and event history;
-- deterministic sensor/event automation with safe stale-data handling;
-- optional offline speech output and local Whisper transcription;
-- a constrained AI-agent prompt that avoids diagnosis and clearly labels simulated data.
+## Run the sensor demo
 
-> Prototype only: this is not a medical device. It does not measure body temperature, heart rate, oxygen saturation, sleep quality, or a confirmed fall.
-
-## Architecture
-
-```text
-ESP32-S3 telemetry or demo simulator
-                 |
-                 v
-Python backend/tool server (localhost:8000)
-        |                    |
-        v                    v
-sensor + event logic     n8n AI tools
-                              |
-                              v
-                    Gemini credential in n8n
-                              |
-                              v
-                 Streamlit frontend
-```
-
-## Included files
-
-| Area | Files | Why included |
-|---|---|---|
-| Frontend | `frontend/app.py`, logo, requirements | Complete user interface and its required asset/dependencies |
-| Backend API | `backend/tool_server.py` | Local HTTP endpoints, demo simulator, and serial telemetry entry point |
-| Core logic | `monitor.py`, `event_detector.py`, `event_store.py` | Sensor validation, posture estimation, LED rules, and event history |
-| Voice | `backend/voice.py` | Optional offline text-to-speech support |
-| Demo data | `backend/data/*.json` | Explicitly fictional profile, reviewed educational notes, and calibration placeholder |
-| AI behavior | `prompts/agent_system_prompt.txt` | Safety and evidence rules for the n8n AI Agent |
-| Setup | `requirements.txt`, `.env.example`, `docs/ARCHITECTURE.md` | Reproducible install and concise technical overview |
-
-The full development repository retains hardware notes, automation helpers, auxiliary command-line clients, and extended tests. They are intentionally omitted here so judges can review the essential application quickly.
-
-## Run the core demo
-
-Open a terminal in this `judge_submission` folder.
-
-### 1. Create the environment
-
-Windows:
+Open a terminal in this folder, create an environment, and install dependencies:
 
 ```bat
 py -m venv .venv
 .venv\Scripts\activate.bat
-python -m pip install -r requirements.txt
+python -m pip install -r requirements.txt -c constraints-demo.txt
+python -m backend.tool_server --demo
 ```
 
-macOS/Linux:
+On macOS/Linux use `python3 -m venv .venv` and `source .venv/bin/activate`.
 
-```bash
-python3 -m venv .venv
-source .venv/bin/activate
-python -m pip install -r requirements.txt
+In a second activated terminal, still in this folder:
+
+```bat
+python -m streamlit run frontend/app.py --server.address 127.0.0.1
 ```
 
-### 2. Start the backend
+Monitoring works with the backend alone and refreshes when the page reruns. The calculated LED state is software-only; there is no implemented physical LED command path.
 
-```bash
-python -m backend.tool_server --demo --speak
-```
+## AI chat
 
-The local API will be available at `http://127.0.0.1:8000`.
+AI chat also requires a local n8n workflow and a provider credential stored in n8n. A workflow export is not included.
 
-Useful endpoints:
+Use `POST http://localhost:5678/webhook/ayusarthi-chat` with `{"chatInput":"...","sessionId":"..."}`, returning `{"answer":"..."}`. Configure the agent using `prompts/agent_system_prompt.txt`. Its tools can read sensor status, the synthetic profile, and keyword-matched educational notes. Keep `/control` out of model tools.
 
-- `/health`
-- `/tools/sensor-status`
-- `/tools/event-history`
-- `/tools/profile`
-- `/tools/health-notes?query=walking`
+The frontend reads `N8N_CHAT_URL` and `SENSOR_URL` from the process environment. `.env.example` documents their defaults; `.env` is not loaded automatically. The parent repository's `automation/n8n/README.md` contains the longer setup contract.
 
-### 3. Start the frontend
+## Included code
 
-In a second activated terminal, still inside `judge_submission`:
+| Path | Purpose |
+|---|---|
+| `frontend/` | Chat/monitoring UI, logo, and dependencies |
+| `backend/tool_server.py` | Local API, serial input, and simulator |
+| `backend/monitor.py`, `event_detector.py`, `event_store.py` | Sensor checks, software LED rules, and event storage |
+| `backend/voice.py` | Optional local speech output |
+| `backend/data/` | Synthetic profile, source-linked note fixtures, and empty calibration |
+| `prompts/`, `docs/` | Agent instructions and architecture notes |
 
-```bash
-python -m streamlit run frontend/app.py
-```
+The parent repository is the development source and contains tests, hardware notes, and auxiliary tools. This copy is generated from the parent repository with `python -m scripts.build_judge_bundle --sync`; CI checks for drift. The archive includes a SHA256 manifest.
 
-Open the local URL printed by Streamlit.
+## Voice, privacy, and limitations
 
-Sensor monitoring and the simulation work through the Python backend. AI chat additionally expects the local n8n webhook shown in `.env.example`; the Gemini key belongs in n8n's credential store and is never committed.
+Voice packages are optional: install them with `python -m pip install -r requirements-voice.txt`. They are not covered by the text/sensor demo constraints or CI. Whisper input needs an FFmpeg executable on `PATH` and an initial model download. Review the transcript before sending. Backend speech uses `--speak`; the frontend has a separate **Spoken replies** toggle.
 
-## Voice note
-
-Text chat does not require FFmpeg. Local Whisper transcription does require an FFmpeg executable on `PATH`. Speech output is optional; omit `--speak` if audio is unavailable.
-
-## Privacy and security
-
-- No API keys, passwords, Wi-Fi credentials, or real patient records are included.
-- The profile is explicitly marked synthetic.
-- Runtime event and greeting-state files are generated locally and should not be committed.
-- The backend binds to loopback only.
+The backend has no authentication and must stay on loopback. Use synthetic data and keep credentials in n8n. Real posture needs installation-specific calibration. Full firmware, a workflow export, and measured end-to-end results are not included.

@@ -17,7 +17,8 @@ class ToolsIntegrationTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.temp = tempfile.TemporaryDirectory()
-        cls.state = ToolState(demo=False, state_path=Path(cls.temp.name) / "state.json")
+        cls.state = ToolState(demo=False, state_path=Path(cls.temp.name) / "state.json",
+                              events_path=Path(cls.temp.name) / "events.json")
         cls.server = ThreadingHTTPServer(("127.0.0.1", 0), handler_for(cls.state))
         cls.base = f"http://127.0.0.1:{cls.server.server_port}"
         cls.thread = threading.Thread(target=cls.server.serve_forever, daemon=True)

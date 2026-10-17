@@ -1,0 +1,5 @@
+# Optional voice support; excluded from the text/sensor demo installation.
+pyttsx3>=2.90,<3
+openai-whisper
+vosk
+sounddevice

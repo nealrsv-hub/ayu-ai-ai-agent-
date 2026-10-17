@@ -1,33 +1,31 @@
-# ESP32-S3 hardware integration
+# ESP32-S3 telemetry integration
 
-The current repository includes the validated serial telemetry helper, not a claim of a complete production firmware image.
+This directory contains a telemetry helper for an existing Arduino sketch. It does not include complete firmware or measured hardware-validation results.
 
-## Confirmed project pin map
+## Recorded project pin map
 
 | Function | ESP32-S3 GPIO |
 |---|---:|
 | HC-SR04 TRIG | 4 |
-| HC-SR04 ECHO | 5, through the existing 10 kΩ / 15 kΩ divider |
+| HC-SR04 ECHO | 5, through the recorded 10 kΩ / 15 kΩ divider |
 | DHT11 DATA | 6 |
 | Digital LDR DO | 7 |
 | OLED SDA | 8 |
 | OLED SCL/SCK | 9 |
 | LED | 10 |
 
-OLED address used during the hackathon was `0x3C`.
+The recorded OLED address is `0x3C`. Check the actual board, wiring, and input levels before using this map; the helper itself does not configure or validate them.
 
-## Telemetry contract
+## Serial contract
 
-The Python backend expects newline-delimited JSON over USB serial at 115200 baud, for example:
+The backend expects newline-delimited JSON over USB serial at 115200 baud:
 
 ```json
 {"distance_cm":82.4,"temperature_c":27.1,"humidity_pct":58.0,"light_state":"bright","led_on":false}
 ```
 
-Use JSON `null` for failed numeric measurements. Do not send medical conclusions from firmware.
+Use JSON `null` for failed numeric measurements. `firmware/telemetry_snippet.h` emits this format when called from a working sketch.
 
-`firmware/telemetry_snippet.h` can be included in the working Arduino sketch to emit this contract.
+Telemetry is one-way. The Python LED decision does not send a command to this firmware, and a reported LED field is not an acknowledgement of a Python action.
 
-## Important
-
-`backend/data/calibration.json` deliberately starts with empty posture bands. Measure your actual ceiling/model geometry before entering standing/sitting/lying ranges; do not copy demo thresholds into a real installation.
+`backend/data/calibration.json` starts with empty posture bands. Measure the actual sensor geometry before entering standing, sitting, and lying ranges. Demo ranges are not a substitute for calibration.

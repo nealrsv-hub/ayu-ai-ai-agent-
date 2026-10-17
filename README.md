@@ -1,78 +1,101 @@
-# AYU AI / AYUSARTHI
+# AYUSARTHI (AYU AI)
 
-AI-assisted elderly monitoring, voice assistance, local sensor automation, and a hackathon caregiver-oriented interface.
+A local hackathon prototype that combines room sensor monitoring, a Streamlit chat interface, and an n8n model workflow.
 
-> **Prototype scope:** This is a hackathon demonstration, not a medical device. Sensor readings are room/environment and distance measurements, not body vital signs or medical diagnoses.
+**Status:** prototype. The Python sensor simulator and backend can run without a model API. AI chat requires a separately configured n8n workflow. The sensors measure room conditions and distance; they do not diagnose illness or detect a confirmed fall.
 
-## Architecture
+## What is implemented
 
-```text
-ESP32-S3 sensors
-      |
-      | USB serial JSON
-      v
-Python backend/tool server
-      |
-      +----> local event rules / event history
-      |
-      +----> n8n AI Agent ----> Gemini model credential in n8n
-      |
-      v
-Streamlit AYU AI frontend
+| Component | Current behavior |
+|---|---|
+| Sensor monitor | Reads serial JSON or labelled demo values; withholds stale readings |
+| Local API | Serves sensor status, a synthetic profile, educational notes, and event history |
+| LED rules | Calculates a software LED decision from darkness, posture estimate, and freshness |
+| Frontend | Chat, manually refreshed monitoring, and optional voice input/output |
+| Health-note retrieval | Keyword search over three source-linked educational summaries |
+| Caregiver and alerts pages | Placeholder screens; no accounts, notifications, or emergency calls |
+
+The Python LED decision does not drive a physical LED: no serial command or acknowledgement path is implemented. Real posture estimates remain unknown until the installation is calibrated. Conversation memory depends on the n8n workflow; a session ID alone does not provide it.
+
+## Data flow
+
+```mermaid
+flowchart TD
+    S["ESP32-S3 telemetry or simulator"] --> B["Python tool server"]
+    F["Streamlit interface"] -->|Sensor requests| B
+    F -->|Chat requests| N["Local n8n workflow"]
+    N -->|Read-only tools| B
+    N --> M["Configured model API"]
 ```
 
-## Repository structure
-
-```text
-frontend/              Streamlit chat/monitoring UI and logo
-backend/               Python tool server, sensor monitor, events, voice helpers
-backend/data/          fictional demo profile, reviewed notes, calibration
-hardware/esp32-s3/     ESP32-S3 integration notes and telemetry helper
-automation/n8n/        n8n setup notes and local start script
-prompts/               AI Agent system prompt
-tests/                 local integration and regression tests
-docs/                  event design and setup notes
-```
-
-## Privacy and secrets
-
-No model API key is required in the Python source. The hackathon design stores the Gemini key in the n8n credential store. Never commit `.env`, API keys, passwords, Wi-Fi credentials, n8n credentials, or real patient data.
+See [architecture](docs/ARCHITECTURE.md) for the state and control boundaries.
 
 ## Run locally
 
-### Backend
+Use Python 3.12 for the configuration checked by the repository tests. From the repository root on Windows:
 
 ```bat
 py -m venv .venv
 .venv\Scripts\activate.bat
-python -m pip install -r backend\requirements.txt
-python -m backend.tool_server --demo --speak
+python -m pip install -r requirements.txt -c constraints-demo.txt
+python -m backend.tool_server --demo
 ```
 
-The backend binds to loopback and exposes endpoints such as:
+On macOS/Linux, create the environment with `python3 -m venv .venv` and activate it with `source .venv/bin/activate`.
 
-- `http://127.0.0.1:8000/health`
-- `http://127.0.0.1:8000/tools/sensor-status`
-- `http://127.0.0.1:8000/tools/profile`
-- `http://127.0.0.1:8000/tools/health-notes?query=walking`
-
-### n8n
+Open another terminal, activate the same environment, and run:
 
 ```bat
-automation\n8n\start_n8n.bat
+python -m streamlit run streamlit_app.py --server.address 127.0.0.1
 ```
 
-### Frontend
+Open the local URL printed by Streamlit. Monitoring works with the backend alone; chat reports a connection error until n8n is configured. [n8n setup](automation/n8n/README.md) describes the request, response, and tool contracts.
 
-The Streamlit frontend is being moved into `frontend/` on the organization branch. It connects only to the local Python tool server and local n8n webhook in the current prototype.
+The frontend reads `N8N_CHAT_URL` and `SENSOR_URL` from the process environment. Their defaults are shown in [.env.example](.env.example). The application does not load a `.env` file automatically.
 
-## Hardware
+For example, in Windows Command Prompt before starting Streamlit:
 
-The confirmed ESP32-S3 project used HC-SR04, DHT11, a digital LDR module, OLED and LED. See `hardware/esp32-s3/README.md` for the pin map and serial telemetry contract.
+```bat
+set N8N_CHAT_URL=http://localhost:5678/webhook/ayusarthi-chat
+set SENSOR_URL=http://127.0.0.1:8000/tools/sensor-status
+```
 
-## Current limitations
+Keep these services local. See [security boundaries](SECURITY.md).
 
-- `calibration.json` intentionally has no real posture bands until the physical installation is measured.
-- The repository contains a serial telemetry helper, not a claim that the complete final ESP32 firmware has been independently revalidated here.
-- A credential-reviewed n8n workflow export was not included in the uploaded source package.
-- This prototype must not be used to diagnose, prescribe, or make medical decisions.
+### Optional voice and hardware
+
+The default install supports typed chat and sensor monitoring. Install optional audio dependencies separately with `python -m pip install -r requirements-voice.txt`. Optional voice dependencies are not covered by the demo constraints or CI.
+
+The frontend uses local Whisper transcription after its first model download. It requires an FFmpeg executable on `PATH`; confirm the transcript before sending it to chat. Typed chat does not require FFmpeg.
+
+Backend speech is enabled with `--speak`. The frontend has its own **Spoken replies** toggle. Both depend on the computer's audio setup.
+
+For actual serial telemetry, replace `--demo` with `--serial COM5` using the correct port. [Hardware notes](hardware/esp32-s3/README.md) contain the recorded pin map and telemetry format. Only a telemetry helper is included, not a complete firmware sketch.
+
+## Repository layout
+
+| Path | Purpose |
+|---|---|
+| `streamlit_app.py`, `frontend/` | Frontend entrypoint, UI, and logo |
+| `backend/` | HTTP tools, monitoring, event rules, and voice helpers |
+| `backend/data/` | Synthetic fixtures and calibration configuration |
+| `automation/n8n/`, `prompts/` | Workflow setup contract and agent instructions |
+| `hardware/esp32-s3/` | Hardware notes and serial telemetry helper |
+| `tests/` | Local backend, frontend-contract, and repository checks |
+| `judge_submission/` | Standalone review copy of the application |
+
+The root application is the development source. The judge copy is generated from an explicit file list and checked by CI. See [development and demo checks](docs/DEVELOPMENT.md).
+
+## Checks and limitations
+
+```bat
+python -m unittest discover -s tests -v
+```
+
+CI checks Python 3.12 on Linux and Windows, builds the judge archive, runs a simulated backend check, and audits the tested dependencies. Download the archive and check results from the workflow run artifacts.
+
+The tests use temporary files, local HTTP servers, and mocked frontend requests. They do not establish hardware accuracy, model-answer quality, audible speech, or end-to-end n8n behavior.
+
+There is no workflow export, complete firmware, measured accuracy report, or recorded end-to-end demo in this repository. The educational notes are source-linked fixtures, not a clinical knowledge base. No license has been selected.
+
+The next useful milestone is a repeatable end-to-end demo with a sanitized n8n workflow export, followed by measured hardware calibration. The included backend check does not verify those missing integrations.

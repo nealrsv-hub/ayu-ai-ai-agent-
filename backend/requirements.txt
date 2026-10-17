@@ -1,2 +1,1 @@
-pyserial>=3.5,<4
-pyttsx3>=2.90,<3
+pyserial==3.5
