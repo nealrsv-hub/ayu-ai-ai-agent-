@@ -1,4 +1,4 @@
-# AYU AI / AYUSARTHI
+# AyuSaarthi AI
 
 AI-assisted elderly monitoring, voice assistance, local sensor automation, and a hackathon caregiver-oriented interface.
 
@@ -18,7 +18,7 @@ Python backend/tool server
       +----> n8n AI Agent ----> Gemini model credential in n8n
       |
       v
-Streamlit AYU AI frontend
+Streamlit AyuSaarthi AI frontend
 ```
 
 ## Repository structure
@@ -64,7 +64,7 @@ automation\n8n\start_n8n.bat
 
 ### Frontend
 
-The Streamlit frontend is being moved into `frontend/` on the organization branch. It connects only to the local Python tool server and local n8n webhook in the current prototype.
+The Streamlit frontend connects only to the local Python tool server and local n8n webhook in the current prototype.
 
 ## Hardware
 
