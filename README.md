@@ -1,25 +1,33 @@
 # AyuSaarthi AI
 
-AI-assisted elderly monitoring, voice assistance, local sensor automation, and a hackathon caregiver-oriented interface.
+AI-assisted elderly monitoring, voice assistance, local sensor automation, caregiver-oriented software, and a dual-axis solar-tracking demonstration for renewable-energy awareness.
 
-> **Prototype scope:** This is a hackathon demonstration, not a medical device. Sensor readings are room/environment and distance measurements, not body vital signs or medical diagnoses.
+> **Prototype scope:** This is a hackathon demonstration, not a medical device. Sensor readings are room/environment and distance measurements, not body vital signs or medical diagnoses. The solar subsystem demonstrates light tracking; it is not currently claimed to power or charge the complete AyuSaarthi system.
 
 ## Architecture
 
 ```text
-ESP32-S3 sensors
-      |
-      | USB serial JSON
-      v
-Python backend/tool server
-      |
-      +----> local event rules / event history
-      |
-      +----> n8n AI Agent ----> Gemini model credential in n8n
-      |
-      v
-Streamlit AyuSaarthi AI frontend
+Room sensors                       Dual-axis solar tracker
+HC-SR04 / DHT11 / digital LDR      2 light sensors + 2 servos + small PV panel
+        \                                      /
+         \                                    /
+                  ESP32-S3
+                     |
+            local deterministic rules
+                     |
+              USB serial JSON
+                     v
+          Python backend/tool server
+             |                 |
+             |                 +----> local event rules / event history
+             |
+             +----------------------> n8n AI Agent ----> Gemini credential in n8n
+                                      |
+                                      v
+                           Streamlit AyuSaarthi AI frontend
 ```
+
+Time-critical sensing and actuator rules remain local. The AI layer receives system context but is not the only safety layer and is not trusted to directly drive motors.
 
 ## Repository structure
 
@@ -31,7 +39,7 @@ hardware/esp32-s3/     ESP32-S3 integration notes and telemetry helper
 automation/n8n/        n8n setup notes and local start script
 prompts/               AI Agent system prompt
 tests/                 local integration and regression tests
-docs/                  event design and setup notes
+docs/                  architecture, event design, setup and solar-tracker design notes
 ```
 
 ## Privacy and secrets
@@ -68,11 +76,29 @@ The Streamlit frontend connects only to the local Python tool server and local n
 
 ## Hardware
 
-The confirmed ESP32-S3 project used HC-SR04, DHT11, a digital LDR module, OLED and LED. See `hardware/esp32-s3/README.md` for the pin map and serial telemetry contract.
+### Room monitoring
+
+The confirmed ESP32-S3 room-monitoring stack uses HC-SR04, DHT11, a digital LDR module, OLED and LED.
+
+### Dual-axis solar tracker
+
+The updated integrated prototype adds:
+
+- a small photovoltaic solar panel;
+- 2 LDR/light sensors positioned to compare incident light;
+- 2 servo motors for horizontal and vertical panel movement;
+- mechanical mounting for two-axis motion;
+- regulated servo power with a common ground shared with the controller.
+
+The tracker compares the two light-sensor readings and adjusts the servos toward the stronger light direction. Exact solar-tracker GPIO assignments, servo limits and sensor thresholds are deliberately left unclaimed until they are fixed and validated on the physical build.
+
+See `hardware/esp32-s3/README.md` for the confirmed room-monitoring pin map and `docs/SOLAR_TRACKER.md` for the solar subsystem integration plan.
 
 ## Current limitations
 
 - `calibration.json` intentionally has no real posture bands until the physical installation is measured.
 - The repository contains a serial telemetry helper, not a claim that the complete final ESP32 firmware has been independently revalidated here.
+- The solar tracker is currently a light-following demonstration. Solar charging, MPPT, battery management and measured energy-gain claims are outside the current validated scope.
+- Solar-tracker GPIO assignments, LDR interface details, servo travel limits and power sizing must be validated on the final hardware before they are treated as fixed specifications.
 - A credential-reviewed n8n workflow export was not included in the uploaded source package.
 - This prototype must not be used to diagnose, prescribe, or make medical decisions.
